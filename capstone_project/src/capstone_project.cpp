@@ -24,6 +24,8 @@
 void setup();
 void loop();
 void door_hopper();
+void BME280();
+void Moisture();
 void Air_Quality_Sensor();
 #line 18 "c:/Users/yendo/Documents/IoT/IoT-2/capstone_project/capstone_project/src/capstone_project.ino"
 Adafruit_BME280 bme;
@@ -71,7 +73,7 @@ SYSTEM_MODE ( SEMI_AUTOMATIC );     //SEMI_AUTOMATIC to skip wifi internet conne
 // float ratio = 0;
 // float concentration = 0;
 int value,moisture,valueSlider,airQuality,dustConsentrate,status;
-// float var_sent_to_dashboard,tempC,pressPA,humidRH;
+float var_sent_to_dashboard,tempC,pressPA,humidRH;
 //const int LED_7=A0;
 // const int board_LED_on=A0;
 
@@ -104,10 +106,10 @@ void setup() {
   //mqtt.subscribe(&TempF);
   // mqtt.subscribe(&Receive_From_Cloud);    //Receive from io.adafruit.com dashboard
  
-  // status=bme.begin(0x76);
-  //   if(status==false){
-  //   Serial.print("initialization failed");
-  //   }
+  status=bme.begin(0x76);
+    if(status==false){
+    Serial.print("initialization failed");
+    }
 }         //THIS IS THE END OF void setup()
 
 
@@ -115,7 +117,8 @@ void loop() {
   // MQTT_connect();
   // OLED_display();
   door_hopper();
-  // BME280();
+  BME280();
+  //Moisture();
   Air_Quality_Sensor();
   // Dust_Sensor();
   // Conveyor();
@@ -216,27 +219,28 @@ void door_hopper() {
   Serial.printf("angle hopper door closed %i \n",myServo.read());
 }
 
-// void BME280() {
-//   tempC=(bme.readTemperature()*9.0/5+32);
-//   Serial.printf("tempF=%0.2f \n",tempC);
-//   pressPA=bme.readPressure()/100.0*0.0002953;
-//   Serial.printf("pressPA=%0.2finHg \n",pressPA);
-//   humidRH=bme.readHumidity();
-//   Serial.printf("humidRH=%0.2f \n",humidRH);
+void BME280() {
+  tempC=(bme.readTemperature()*9.0/5+32);
+  Serial.printf("tempF=%0.2f \n",tempC);
+  pressPA=bme.readPressure()/100.0*0.0002953;
+  Serial.printf("pressPA=%0.2finHg \n",pressPA);
+  humidRH=bme.readHumidity();
+  Serial.printf("humidRH=%0.2f \n",humidRH);
+}
+
+void Moisture(){
 //   moisture=analogRead(A1);
 //   Serial.printf("Moisture content is %i \n",moisture);
-//   if(moisture>2500)
-//   {
+//   if(moisture>2500){
 //     digitalWrite(A0,HIGH);    //make Argon pin A0 HIGH 
 //     Serial.println("the motor is on") ;
 //     delay(500);
 //     digitalWrite(A0,LOW);      //if the dashboard box toggled a 0 make Argon pin A0 low
 //   }
-//   else
-//   {
+//   else{
 //     digitalWrite(A0,LOW);
 //   }
-// }
+}
 
 void Air_Quality_Sensor(){  
   sensor.slope();
