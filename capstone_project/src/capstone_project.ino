@@ -76,7 +76,7 @@ void setup() {
 
   // sync_my_time(); // Ensure the Argon clock is up to date
 
-  myServo.attach(15);     //attach the Servo object to a pin
+  myServo.attach(A2);     //attach the Servo object to a pin
 
     // text display tests
   // display.setTextSize(1);
@@ -206,12 +206,12 @@ void loop() {
 // }
 
 void door_hopper() {
-  myServo.write(90);
-  Serial.print("servo is receiving code");
+  myServo.write(180);
+  Serial.println(myServo.read());
   delay(1000);
-  myServo.write(0);
+  myServo.write(160);
   delay(1000);
-  //myServo.read();
+  Serial.println(myServo.read());
 }
 
 // void BME280()
