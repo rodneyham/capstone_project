@@ -18,15 +18,16 @@
 // #include "Adafruit_MQTT/Adafruit_MQTT_SPARK.h" 
 // #include "Adafruit_MQTT/Adafruit_MQTT.h"  //Instructor Brian Rashap said although one file is a duplicate of the other, both are necessary; did not go into detail.
 // #include "Adafruit_SSD1306.h"
-// #include <Adafruit_BME280.h>
-//#include "Air_Quality_Sensor.h"
-
-// Adafruit_BME280 bme;
+ #include <Adafruit_BME280.h>
+#include "Air_Quality_Sensor.h"
 
 void setup();
 void loop();
 void door_hopper();
-#line 20 "c:/Users/yendo/Documents/IoT/IoT-2/capstone_project/capstone_project/src/capstone_project.ino"
+void Air_Quality_Sensor();
+#line 18 "c:/Users/yendo/Documents/IoT/IoT-2/capstone_project/capstone_project/src/capstone_project.ino"
+Adafruit_BME280 bme;
+
 Servo myServo;      //create object myServo of class Servo
 
 SYSTEM_MODE ( SEMI_AUTOMATIC );     //SEMI_AUTOMATIC to skip wifi internet connection
@@ -69,13 +70,13 @@ SYSTEM_MODE ( SEMI_AUTOMATIC );     //SEMI_AUTOMATIC to skip wifi internet conne
 // unsigned long lowpulseoccupancy = 0;
 // float ratio = 0;
 // float concentration = 0;
-// int value,moisture,valueSlider,airQuality,dustConsentrate,status;
+int value,moisture,valueSlider,airQuality,dustConsentrate,status;
 // float var_sent_to_dashboard,tempC,pressPA,humidRH;
 //const int LED_7=A0;
 // const int board_LED_on=A0;
 
 // Initialize objects from the lib
-// AirQualitySensor sensor(A2);
+AirQualitySensor sensor(A4);
 
 
 void setup() {
@@ -96,9 +97,8 @@ void setup() {
   // delay(2000);
   // pinMode(A0,OUTPUT);     //for pump motor
   // pinMode(A1,INPUT);      //moisture sensor
-  // pinMode(A2,INPUT);      //Air quality sensor
+  pinMode(A4,INPUT);      //Air quality sensor
   // pinMode(A3,INPUT);      //Dust sensor
-  // pinMode(A4,OUTPUT);       //Servo motor
 
   // Setup MQTT subscription for onoff feed.
   //mqtt.subscribe(&TempF);
@@ -116,7 +116,7 @@ void loop() {
   // OLED_display();
   door_hopper();
   // BME280();
-  // Air_Quality_Sensor();
+  Air_Quality_Sensor();
   // Dust_Sensor();
   // Conveyor();
   // Vibration();
@@ -133,23 +133,20 @@ void loop() {
 //     // this is our 'wait for incoming subscription packets' busy subloop
 //   // try to spend your time here
  
-//   Adafruit_MQTT_Subscribe *subscription;
-//   while ((subscription = mqtt.readSubscription(10000))) {       //Read dashboard & store into a var, wait 10 seconds
-//     if (subscription == &Receive_From_Cloud) {                  // if the var and subscription from dashboard
-//       value = atoi((char *)Receive_From_Cloud.lastread);        //read interger from dashboard & store in value i==int f==float
-//                                                                 //WHAT IS <.lastread>?S
-//       Serial.printf("value received from cloud %i \n", value);  //display block data from dashboard    
-
-//     motor_hopper();
-//     }
-
-//     if(subscription==&email_From_Cloud)
-//     {
-//     Serial.printf("You Got Mail \n");
-//     digitalWrite(D7,HIGH);
-//     delay(10000);
-//     digitalWrite(D7,LOW);
-//     }
+  // Adafruit_MQTT_Subscribe *subscription;
+  // while ((subscription = mqtt.readSubscription(10000))) {       //Read dashboard & store into a var, wait 10 seconds
+  //   if (subscription == &Receive_From_Cloud) {                  // if the var and subscription from dashboard
+  //     value = atoi((char *)Receive_From_Cloud.lastread);        //read interger from dashboard & store in value i==int f==float
+  //                                                               //WHAT IS <.lastread>?S
+  //     Serial.printf("value received from cloud %i \n", value);  //display block data from dashboard    
+  //   }
+  //   if(subscription==&email_From_Cloud)
+  //   {
+  //   Serial.printf("You Got Mail \n");
+  //   digitalWrite(D7,HIGH);
+  //   delay(10000);
+  //   digitalWrite(D7,LOW);
+  //   }
 }       //THIS IS THE END OF void loop()
   
 
@@ -172,14 +169,11 @@ void loop() {
 // // Should be called in the loop function and it will take care if connecting.
 // void MQTT_connect() {
 //   int8_t ret;
- 
 //   // Stop if already connected.
 //   if (mqtt.connected()) {
 //     return;
 //   }
- 
 //   Serial.print("Connecting to MQTT... ");
- 
 //   while ((ret = mqtt.connect()) != 0) { // connect will return 0 for connected
 //        Serial.println(mqtt.connectErrorString(ret));
 //        Serial.println("Retrying MQTT connection in 5 seconds...");
@@ -200,11 +194,9 @@ void loop() {
 // {
 //   DateTime=Time.timeStr (); // Get Current Time
 //   TimeOnly=DateTime.substring (11,19); // Extract the Time from the DateTime String
-
 //   // Convert String to char arrays - this is needed for formatted print
 //   //DateTime.toCharArray ( currentDateTime ,25) ;
 //   TimeOnly.toCharArray (currentTime,9);
-  
 //    // Print using formatted print
 //   Serial.println("Rodney Ham");   //print on serial monitor
 //   display.println("Rodney Ham");    //display on OLED moniter
@@ -217,24 +209,20 @@ void loop() {
 
 void door_hopper() {
   myServo.write(180);
-  Serial.println(myServo.read());
+  Serial.printf("angle hopper door open %i \n",myServo.read());
   delay(1000);
   myServo.write(160);
   delay(1000);
-  Serial.println(myServo.read());
+  Serial.printf("angle hopper door closed %i \n",myServo.read());
 }
 
-// void BME280()
-// {
+// void BME280() {
 //   tempC=(bme.readTemperature()*9.0/5+32);
 //   Serial.printf("tempF=%0.2f \n",tempC);
-  
 //   pressPA=bme.readPressure()/100.0*0.0002953;
 //   Serial.printf("pressPA=%0.2finHg \n",pressPA);
-  
 //   humidRH=bme.readHumidity();
 //   Serial.printf("humidRH=%0.2f \n",humidRH);
-
 //   moisture=analogRead(A1);
 //   Serial.printf("Moisture content is %i \n",moisture);
 //   if(moisture>2500)
@@ -248,15 +236,14 @@ void door_hopper() {
 //   {
 //     digitalWrite(A0,LOW);
 //   }
-  
 // }
 
-// void Air_Quality_Sensor(){  
-//     sensor.slope();
-//     airQuality=sensor.getValue();
-//     Serial.println(airQuality);
-//     delay(2000);
-//   }
+void Air_Quality_Sensor(){  
+  sensor.slope();
+  airQuality=sensor.getValue();
+  Serial.printf("airQuality %i \n",airQuality);
+  delay(2000);
+  }
 
 // void Dust_Sensor(){ 
 //     duration = pulseIn(A3,LOW);
