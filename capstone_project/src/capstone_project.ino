@@ -2,7 +2,7 @@
  * Project capstone_project
  * Description:  fill mold push onto conveyor & read RFID; reject molds with voids in fill
  * Author: Rodney Ham
- * Date:  30 November 2020 Monday
+ * Date:  03 December 2020 Thursday 2232
  */
 
 
@@ -19,7 +19,8 @@ Adafruit_BME280 bme;
 
 Servo myServo;      //create object myServo of class Servo
 
-SYSTEM_MODE ( SEMI_AUTOMATIC );     //SEMI_AUTOMATIC to skip wifi internet connection
+//SYSTEM_MODE ( SEMI_AUTOMATIC );     //SEMI_AUTOMATIC to skip wifi internet connection
+SYSTEM_MODE ( AUTOMATIC );     //SEMI_AUTOMATIC to skip wifi internet connection
 
 
 // #define OLED_RESET D4
@@ -48,16 +49,16 @@ Adafruit_MQTT_Publish temp_to_Cloud = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME 
 Adafruit_MQTT_Publish pressure_to_Cloud = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/bar_pressure");   //publish var to broker with this name
 Adafruit_MQTT_Publish humidity_to_Cloud = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/humidity");   //publish var to broker with this name
 Adafruit_MQTT_Publish AQ_to_Cloud = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/air_Quality");   //publish var to broker with this name
-// Adafruit_MQTT_Publish Dust_to_Cloud = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/dust_concentration");   //publish var to broker with this name
+Adafruit_MQTT_Publish Dust_to_Cloud = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/dust_concentration");   //publish var to broker with this name
 
 
 
 /************Declare Variables************/
 unsigned long last,lastTime,duration,starttime;
-// unsigned long sampletime_ms = 30000;//sample 30s ;
-// unsigned long lowpulseoccupancy = 0;
-// float ratio = 0;
-// float concentration = 0;
+unsigned long sampletime_ms = 30000;//sample 30s ;
+unsigned long lowpulseoccupancy = 0;
+float ratio = 0;
+float concentration = 0;
 int value,moisture,valueSlider,airQuality,dustConsentrate,status;
 float var_sent_to_dashboard,tempC,pressPA,humidRH;
 //const int LED_7=A0;
@@ -77,7 +78,7 @@ void setup() {
 
   myServo.attach(A2);     //attach the Servo object to a pin
 
-    // text display tests
+    // text display texts
   // display.setTextSize(1);
   // display.setCursor(0,0);
   // display.setTextColor(WHITE);
@@ -86,27 +87,27 @@ void setup() {
   // pinMode(A0,OUTPUT);     //for pump motor
   // pinMode(A1,INPUT);      //moisture sensor
   pinMode(A4,INPUT);      //Air quality sensor
-  // pinMode(A3,INPUT);      //Dust sensor
+  pinMode(A0,INPUT);      //Dust sensor
 
   // Setup MQTT subscription for onoff feed.
   //mqtt.subscribe(&TempF);
-  // mqtt.subscribe(&Receive_From_Cloud);    //Receive DATA from io.adafruit.com dashboard
+  // mqtt.subscribe(&Receive_From_Cloud);    //Receive DATA from io.adafruit.com dashboard var "Receive_From_cloud"
  
   status=bme.begin(0x76);
     if(status==false){
     Serial.print("initialization failed");
     }
-}         //THIS IS THE END OF void setup()
+}//THIS IS THE END OF void setup()
 
 
 void loop() {
-  // MQTT_connect();
+  MQTT_connect();
   // OLED_display();
-  door_hopper();
+  //door_hopper();
   BME280();
   //Moisture();
   Air_Quality_Sensor();
-  // Dust_Sensor();
+  Dust_Sensor();
   // Conveyor();
   // Vibration();
 
@@ -134,22 +135,21 @@ void loop() {
   //   delay(10000);
   //   digitalWrite(D7,LOW);
   //   }
-}       //THIS IS THE END OF void loop()
-  
-
-  if(millis()-lastTime>5000)    //publish to broker
-  {                  
+    if(millis()-lastTime>10000) {    //publish to broker                 
     if(mqtt.Update()) {             //if mqtt ready to receive data then use publish                           
-       temp_to_Cloud.publish(tempC); 
-       pressure_to_Cloud.publish(pressPA);
-       humidity_to_Cloud.publish(humidRH);
-       AQ_to_Cloud.publish(airQuality);
+      temp_to_Cloud.publish(tempC); 
+      pressure_to_Cloud.publish(pressPA);
+      humidity_to_Cloud.publish(humidRH);
+      AQ_to_Cloud.publish(airQuality);
+      Dust_to_Cloud.publish(dustConsentrate);
       //moisture_to_Cloud.publish(moisture); 
-      //Dust_to_Cloud.publish(dustConsentrate);
     } 
     lastTime = millis();
   }
-}
+
+}//THIS IS THE END OF void loop()
+  
+
 
 // Function to connect and reconnect as necessary to the MQTT server.
 // Should be called in the loop function and it will take care if connecting.
@@ -193,11 +193,11 @@ void MQTT_connect() {
 //   delay (2000) ; // only loop every 2 seconds
 // }
 
-void door_hopper() {      TODO:
+void door_hopper() {      
   myServo.write(180);
   //Serial.printf("angle hopper door open %i \n",myServo.read());
   delay(1000);          // TODO: while weight is too light keep hopper open
-  myServo.write(160);
+  myServo.write(155);
   delay(1000);          // FIXME:close hopper door when weight is in range
   //Serial.printf("angle hopper door closed %i \n",myServo.read());
 }
@@ -229,22 +229,22 @@ void Air_Quality_Sensor(){
   sensor.slope();
   airQuality=sensor.getValue();
   //Serial.printf("airQuality %i \n",airQuality);
-  delay(2000);
+  //delay(3000);
   }
 
-// void Dust_Sensor(){ 
-//     duration = pulseIn(A3,LOW);
-//     lowpulseoccupancy = lowpulseoccupancy+duration;
-//     if ((millis()-starttime) > sampletime_ms) {        //if the sampel time == 30s
-//         ratio = lowpulseoccupancy/(sampletime_ms*10.0);  // Integer percentage 0=>100
-//         concentration = 1.1*pow(ratio,3)-3.8*pow(ratio,2)+520*ratio+0.62; // using spec sheet curve
-//         Serial.printf("lowpulseoccupancy=%i, ratio=%f, concentration=%f \n",lowpulseoccupancy,ratio,concentration);
-//         lowpulseoccupancy = 0;
-//         Serial.println("Dust is working");
-//         dustConsentrate=concentration;
-//         starttime = millis();
-//     }
-//   }
+void Dust_Sensor(){ 
+    duration = pulseIn(A0,LOW);
+    lowpulseoccupancy = lowpulseoccupancy+duration;
+    if ((millis()-starttime) > sampletime_ms) {        //if the sampel time == 30s
+        ratio = lowpulseoccupancy/(sampletime_ms*10.0);  // Integer percentage 0=>100
+        concentration = 1.1*pow(ratio,3)-3.8*pow(ratio,2)+520*ratio+0.62; // using spec sheet curve
+        Serial.printf("lowpulseoccupancy=%i, ratio=%f, concentration=%f \n",lowpulseoccupancy,ratio,concentration);
+        lowpulseoccupancy = 0;
+        Serial.println("Dust is working");
+        dustConsentrate=concentration;
+        starttime = millis();
+    }
+  }
 
 // void motor_hopper(){            //FIXME:
 //   if(value==1) {               //if the dashboard box toggled a 1 stored in value
