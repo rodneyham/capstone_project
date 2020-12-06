@@ -14,6 +14,7 @@
 #include "Adafruit_SSD1306.h"
 #include <Adafruit_BME280.h>
 #include "Air_Quality_Sensor.h"
+#include "HX711.h"                        //Wheatstone_Bridge
 
 //stepper stuff
 #include <Stepper.h>
@@ -46,11 +47,15 @@ Adafruit_MQTT_SPARK mqtt(&TheClient,AIO_SERVER,AIO_SERVERPORT,AIO_USERNAME,AIO_K
 
 
 
-// /****************************** Feeds ***************************************/ 
-// // Setup Feeds to publish or subscribe 
-// // Notice MQTT paths for AIO follow the form: <username>/feeds/<feedname> 
-// //the var name after feeds must match dashboard block control name
-// Adafruit_MQTT_Subscribe Receive_From_Cloud = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/waterManually"); //read breadboard & store in a var
+/****************************** Feeds ***************************************/ 
+// Setup Feeds to publish or subscribe 
+// Notice MQTT paths for AIO follow the form: <username>/feeds/<feedname> 
+//the var name after feeds must match dashboard block control name
+//NOTE: FeedName, mqttObj, and value should be given descriptive ”names” similar to the naming convention for all variables and objects in the C++ code.
+//Adafruit_MQTT_Subscribe mqttObj1 = Adafruit_MQTT_Subscribe (& mqtt , AIO_USERNAME "/ feeds /FeedNameA ");
+//Adafruit_MQTT_Publish mqttObj2 = Adafruit_MQTT_Publish (& mqtt , AIO_USERNAME "/ feeds /FeedNameB ");
+//refer to Class Slides "MQTT Publish and Subscribe"
+//Adafruit_MQTT_Subscribe Receive_From_Cloud = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/waterManually"); //read breadboard & store in a var
 Adafruit_MQTT_Publish temp_to_Cloud = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/room_temp_chrt");   //publish var to broker with this AIO user name recognized by mqtt
 Adafruit_MQTT_Publish pressure_to_Cloud = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/bar_pressure");   //publish var to broker with this name
 Adafruit_MQTT_Publish humidity_to_Cloud = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/humidity");   //publish var to broker with this name
@@ -106,14 +111,16 @@ void setup() {
 
 void loop() {
   //MQTT_connect();
-  // OLED_display();
+  //OLED_display();
   //door_hopper();   
   //BME280();
   //Moisture();
   //Air_Quality_Sensor();
   //Dust_Sensor();
-  Conveyor();
-  // Vibration();
+  //Conveyor();
+  //Distance_sensor();
+  Wheatstone_Bridge();
+  Serial.print("kfjornsofgj ");
 
 //   if ((millis()-last)>120000) {           //connect - disconnect from dashboard
 //       Serial.printf("Pinging MQTT \n");
@@ -277,6 +284,10 @@ void Conveyor(){
   delay(1000);
 }
 
-// void Vibration(){
+// void Distance_sensor(){
 
 // }
+
+Wheatstone_Bridge(){
+
+}
