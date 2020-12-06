@@ -33,7 +33,7 @@ void Air_Quality_Sensor();
 void Dust_Sensor();
 void Conveyor();
 #line 20 "c:/Users/yendo/Documents/IoT/IoT-2/capstone_project/capstone_project/src/capstone_project.ino"
-const int steps=2048;   //2048 steps in one revolution  for capstone 225 is too many steps but slows stepper way down
+const int steps=2048;   //2048 steps in one revolution  This is a constant for this motor.  Change steps in void loop()
 Stepper stepper(steps, D2, D4, D3, D5);    //IN1=D2, IN3=D4, IN2=D3, IN4=D5 order conneted to Argon
 
 Adafruit_BME280 bme;
@@ -106,8 +106,8 @@ void setup() {
   // display.setTextColor(WHITE);
   // display.display();
   // delay(2000);
-  pinMode(A2,OUTPUT);     //stepper motor conveyor
-  pinMode(A4,INPUT);      //Air quality sensor
+  //pinMode(A2,OUTPUT);     //stepper motor conveyor
+  //pinMode(A4,INPUT);      //Air quality sensor
   pinMode(A0,INPUT);      //Dust sensor
 
   // Setup MQTT subscription for onoff feed.

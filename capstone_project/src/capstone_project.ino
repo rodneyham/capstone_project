@@ -17,7 +17,7 @@
 
 //stepper stuff
 #include <Stepper.h>
-const int steps=2048;   //2048 steps in one revolution  for capstone 225 is too many steps but slows stepper way down
+const int steps=2048;   //2048 steps in one revolution.  This is a constant for this motor.  Change steps in void loop()
 Stepper stepper(steps, D2, D4, D3, D5);    //IN1=D2, IN3=D4, IN2=D3, IN4=D5 order conneted to Argon
 
 Adafruit_BME280 bme;
@@ -40,7 +40,9 @@ SYSTEM_MODE ( SEMI_AUTOMATIC );     //SEMI_AUTOMATIC to skip wifi internet conne
 TCPClient TheClient; 
 
 // Setup the MQTT client class by passing in the WiFi client and MQTT server and login details. 
-Adafruit_MQTT_SPARK mqtt(&TheClient,AIO_SERVER,AIO_SERVERPORT,AIO_USERNAME,AIO_KEY);    //referring to my adafruit account
+Adafruit_MQTT_SPARK mqtt(&TheClient,AIO_SERVER,AIO_SERVERPORT,AIO_USERNAME,AIO_KEY);    //mqtt - object that defines the MQTT connection using the WiFi
+                                                                                        //object, the MQTT server/port, and user name/password.
+
 
 
 
@@ -49,8 +51,7 @@ Adafruit_MQTT_SPARK mqtt(&TheClient,AIO_SERVER,AIO_SERVERPORT,AIO_USERNAME,AIO_K
 // // Notice MQTT paths for AIO follow the form: <username>/feeds/<feedname> 
 // //the var name after feeds must match dashboard block control name
 // Adafruit_MQTT_Subscribe Receive_From_Cloud = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/waterManually"); //read breadboard & store in a var
-// Adafruit_MQTT_Publish moisture_to_Cloud = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/moisture_content");   //publish var to broker with this name
-Adafruit_MQTT_Publish temp_to_Cloud = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/room_temp_chrt");   //publish var to broker with this name
+Adafruit_MQTT_Publish temp_to_Cloud = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/room_temp_chrt");   //publish var to broker with this AIO user name recognized by mqtt
 Adafruit_MQTT_Publish pressure_to_Cloud = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/bar_pressure");   //publish var to broker with this name
 Adafruit_MQTT_Publish humidity_to_Cloud = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/humidity");   //publish var to broker with this name
 Adafruit_MQTT_Publish AQ_to_Cloud = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/air_Quality");   //publish var to broker with this name
@@ -62,10 +63,9 @@ Adafruit_MQTT_Publish Dust_to_Cloud = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME 
 unsigned long last,lastTime,duration,starttime;
 unsigned long sampletime_ms = 30000;//sample 30s ;
 unsigned long lowpulseoccupancy = 0;
-float ratio = 0;
-float concentration = 0;
-int value,moisture,valueSlider,airQuality,dustConsentrate,status;
+float ratio = 0, concentration = 0;
 float var_sent_to_dashboard,tempC,pressPA,humidRH;
+int value,moisture,valueSlider,airQuality,dustConsentrate,status;
 //const int LED_7=A0;
 // const int board_LED_on=A0;
 
@@ -90,8 +90,7 @@ void setup() {
   // display.setTextColor(WHITE);
   // display.display();
   // delay(2000);
-  pinMode(A2,OUTPUT);     //stepper motor conveyor
-  pinMode(A4,INPUT);      //Air quality sensor
+  //pinMode(A4,INPUT);      //Air quality sensor
   pinMode(A0,INPUT);      //Dust sensor
 
   // Setup MQTT subscription for onoff feed.
