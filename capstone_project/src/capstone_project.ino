@@ -15,12 +15,17 @@
 #include <Adafruit_BME280.h>
 #include "Air_Quality_Sensor.h"
 
+//stepper stuff
+#include <Stepper.h>
+const int steps=2048;   //2048 steps in one revolution  for capstone 225 is too many steps but slows stepper way down
+Stepper stepper(steps, D2, D4, D3, D5);    //IN1=D2, IN3=D4, IN2=D3, IN4=D5 order conneted to Argon
+
 Adafruit_BME280 bme;
 
 Servo myServo;      //create object myServo of class Servo
 
-//SYSTEM_MODE ( SEMI_AUTOMATIC );     //SEMI_AUTOMATIC to skip wifi internet connection
-SYSTEM_MODE ( AUTOMATIC );     //SEMI_AUTOMATIC to skip wifi internet connection
+SYSTEM_MODE ( SEMI_AUTOMATIC );     //SEMI_AUTOMATIC to skip wifi internet connection
+//SYSTEM_MODE ( AUTOMATIC );     //SEMI_AUTOMATIC to skip wifi internet connection
 
 
 // #define OLED_RESET D4
@@ -77,6 +82,7 @@ void setup() {
   // sync_my_time(); // Ensure the Argon clock is up to date
 
   myServo.attach(A2);     //attach the Servo object to a pin
+  stepper.setSpeed(15);
 
     // text display texts
   // display.setTextSize(1);
@@ -84,8 +90,7 @@ void setup() {
   // display.setTextColor(WHITE);
   // display.display();
   // delay(2000);
-  // pinMode(A0,OUTPUT);     //for pump motor
-  // pinMode(A1,INPUT);      //moisture sensor
+  pinMode(A2,OUTPUT);     //stepper motor conveyor
   pinMode(A4,INPUT);      //Air quality sensor
   pinMode(A0,INPUT);      //Dust sensor
 
@@ -101,51 +106,51 @@ void setup() {
 
 
 void loop() {
-  MQTT_connect();
+  //MQTT_connect();
   // OLED_display();
-  //door_hopper();
-  BME280();
+  //door_hopper();   
+  //BME280();
   //Moisture();
-  Air_Quality_Sensor();
-  Dust_Sensor();
-  // Conveyor();
+  //Air_Quality_Sensor();
+  //Dust_Sensor();
+  Conveyor();
   // Vibration();
 
-  if ((millis()-last)>120000) {           //connect - disconnect from dashboard
-      Serial.printf("Pinging MQTT \n");
-      if(! mqtt.ping()) {
-        Serial.printf("Disconnecting \n");
-        mqtt.disconnect();
-      }
-      last = millis();
-  }
+//   if ((millis()-last)>120000) {           //connect - disconnect from dashboard
+//       Serial.printf("Pinging MQTT \n");
+//       if(! mqtt.ping()) {
+//         Serial.printf("Disconnecting \n");
+//         mqtt.disconnect();
+//       }
+//       last = millis();
+//   }
 
-//     // this is our 'wait for incoming subscription packets' busy subloop
-//   // try to spend your time here
-  // Adafruit_MQTT_Subscribe *subscription;
-  // while ((subscription = mqtt.readSubscription(10000))) {       //Read dashboard & store into a var, wait 10 seconds
-  //   if (subscription == &Receive_From_Cloud) {                  // if the var and subscription from dashboard
-  //     value = atoi((char *)Receive_From_Cloud.lastread);        //read interger from dashboard & store in value i==int f==float
-  //                                                               //WHAT IS <.lastread>?
-  //     Serial.printf("value received from cloud %i \n", value);  //display block data from dashboard    
-  //   }
-  //   if(subscription==&email_From_Cloud){
-  //   Serial.printf("You Got Mail \n");
-  //   digitalWrite(D7,HIGH);
-  //   delay(10000);
-  //   digitalWrite(D7,LOW);
-  //   }
-    if(millis()-lastTime>10000) {    //publish to broker                 
-    if(mqtt.Update()) {             //if mqtt ready to receive data then use publish                           
-      temp_to_Cloud.publish(tempC); 
-      pressure_to_Cloud.publish(pressPA);
-      humidity_to_Cloud.publish(humidRH);
-      AQ_to_Cloud.publish(airQuality);
-      Dust_to_Cloud.publish(dustConsentrate);
-      //moisture_to_Cloud.publish(moisture); 
-    } 
-    lastTime = millis();
-  }
+// //     // this is our 'wait for incoming subscription packets' busy subloop
+// //   // try to spend your time here
+//   // Adafruit_MQTT_Subscribe *subscription;
+//   // while ((subscription = mqtt.readSubscription(10000))) {       //Read dashboard & store into a var, wait 10 seconds
+//   //   if (subscription == &Receive_From_Cloud) {                  // if the var and subscription from dashboard
+//   //     value = atoi((char *)Receive_From_Cloud.lastread);        //read interger from dashboard & store in value i==int f==float
+//   //                                                               //WHAT IS <.lastread>?
+//   //     Serial.printf("value received from cloud %i \n", value);  //display block data from dashboard    
+//   //   }
+//   //   if(subscription==&email_From_Cloud){
+//   //   Serial.printf("You Got Mail \n");
+//   //   digitalWrite(D7,HIGH);
+//   //   delay(10000);
+//   //   digitalWrite(D7,LOW);
+//   //   }
+//     if(millis()-lastTime>10000) {    //publish to broker                 
+//     if(mqtt.Update()) {             //if mqtt ready to receive data then use publish                           
+//       temp_to_Cloud.publish(tempC); 
+//       pressure_to_Cloud.publish(pressPA);
+//       humidity_to_Cloud.publish(humidRH);
+//       AQ_to_Cloud.publish(airQuality);
+//       Dust_to_Cloud.publish(dustConsentrate);
+//       //moisture_to_Cloud.publish(moisture); 
+//     } 
+//     lastTime = millis();
+//   }
 
 }//THIS IS THE END OF void loop()
   
@@ -238,9 +243,9 @@ void Dust_Sensor(){
     if ((millis()-starttime) > sampletime_ms) {        //if the sampel time == 30s
         ratio = lowpulseoccupancy/(sampletime_ms*10.0);  // Integer percentage 0=>100
         concentration = 1.1*pow(ratio,3)-3.8*pow(ratio,2)+520*ratio+0.62; // using spec sheet curve
-        Serial.printf("lowpulseoccupancy=%i, ratio=%f, concentration=%f \n",lowpulseoccupancy,ratio,concentration);
+        //Serial.printf("lowpulseoccupancy=%i, ratio=%f, concentration=%f \n",lowpulseoccupancy,ratio,concentration);
         lowpulseoccupancy = 0;
-        Serial.println("Dust is working");
+        //Serial.println("Dust is working");
         dustConsentrate=concentration;
         starttime = millis();
     }
@@ -260,9 +265,18 @@ void Dust_Sensor(){
 //   }
 // }
 
-// void Conveyor(){
+void Conveyor(){
+    // step one revolution  in one direction:
+  // Serial.println("clockwise");
+  // stepper.step(steps*2);
+  // delay(2000);
 
-// }
+    // step one revolution in the other direction:
+  //Serial.println("counterclockwise");
+
+  stepper.step(-195);
+  delay(1000);
+}
 
 // void Vibration(){
 
