@@ -14,7 +14,8 @@
 #include "Adafruit_SSD1306.h"
 #include <Adafruit_BME280.h>
 #include "Air_Quality_Sensor.h"
-#include "HX711.h"                        //Wheatstone_Bridge
+#include "HX711.h"
+
 
 //stepper stuff
 #include <Stepper.h>
@@ -56,23 +57,32 @@ Adafruit_MQTT_SPARK mqtt(&TheClient,AIO_SERVER,AIO_SERVERPORT,AIO_USERNAME,AIO_K
 //Adafruit_MQTT_Publish mqttObj2 = Adafruit_MQTT_Publish (& mqtt , AIO_USERNAME "/ feeds /FeedNameB ");
 //refer to Class Slides "MQTT Publish and Subscribe"
 //Adafruit_MQTT_Subscribe Receive_From_Cloud = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/waterManually"); //read breadboard & store in a var
-Adafruit_MQTT_Publish temp_to_Cloud = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/room_temp_chrt");   //publish var to broker with this AIO user name recognized by mqtt
-Adafruit_MQTT_Publish pressure_to_Cloud = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/bar_pressure");   //publish var to broker with this name
-Adafruit_MQTT_Publish humidity_to_Cloud = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/humidity");   //publish var to broker with this name
-Adafruit_MQTT_Publish AQ_to_Cloud = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/air_Quality");   //publish var to broker with this name
-Adafruit_MQTT_Publish Dust_to_Cloud = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/dust_concentration");   //publish var to broker with this name
+// Adafruit_MQTT_Publish temp_to_Cloud = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/room_temp_chrt");   //publish var to broker with this AIO user name recognized by mqtt
+// Adafruit_MQTT_Publish pressure_to_Cloud = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/bar_pressure");   //publish var to broker with this name
+// Adafruit_MQTT_Publish humidity_to_Cloud = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/humidity");   //publish var to broker with this name
+// Adafruit_MQTT_Publish AQ_to_Cloud = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/air_Quality");   //publish var to broker with this name
+// Adafruit_MQTT_Publish Dust_to_Cloud = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/dust_concentration");   //publish var to broker with this name
 
+//WHEATSTONE_____WHEATSTONE_____/WHEATSTONE_____WHEATSTONE_____
+// From the Command Palette install the HX711A library , that will give you HX711 .h
+#define DOUT D6
+#define CLK D8
+HX711 myScale(DOUT,CLK);             // any two digital pins myScale(DOUT,CLK)
+
+// FLASH WITH WEIGHT OFF WHEATSTONE THEN ADD THE WEIGHT
+const int cal_factor=1935;          // changing value changes get_units units (lb , g, ton , etc .)
+const int samples=10;              // number of data points averaged when using get_units or get_value
+float weight, rawData, calibration;
+int offset;
 
 
 /************Declare Variables************/
 unsigned long last,lastTime,duration,starttime;
-unsigned long sampletime_ms = 30000;//sample 30s ;
-unsigned long lowpulseoccupancy = 0;
-float ratio = 0, concentration = 0;
+unsigned long sampletime_ms=30000;          //sample 30s ;
+unsigned long lowpulseoccupancy=0;
+float ratio=0, concentration=0;
 float var_sent_to_dashboard,tempC,pressPA,humidRH;
 int value,moisture,valueSlider,airQuality,dustConsentrate,status;
-//const int LED_7=A0;
-// const int board_LED_on=A0;
 
 // Initialize objects from the lib
 AirQualitySensor sensor(A4);
@@ -86,8 +96,8 @@ void setup() {
 
   // sync_my_time(); // Ensure the Argon clock is up to date
 
-  myServo.attach(A2);     //attach the Servo object to a pin
-  stepper.setSpeed(15);
+  // myServo.attach(A2);     //attach the Servo object to a pin
+  // stepper.setSpeed(15);
 
     // text display texts
   // display.setTextSize(1);
@@ -96,16 +106,25 @@ void setup() {
   // display.display();
   // delay(2000);
   //pinMode(A4,INPUT);      //Air quality sensor
-  pinMode(A0,INPUT);      //Dust sensor
+  //pinMode(A0,INPUT);      //Dust sensor
+  //pinMode(A2,OUTPUT);     //hopper servo motor
+
 
   // Setup MQTT subscription for onoff feed.
   //mqtt.subscribe(&TempF);
   // mqtt.subscribe(&Receive_From_Cloud);    //Receive DATA from io.adafruit.com dashboard var "Receive_From_cloud"
  
-  status=bme.begin(0x76);
-    if(status==false){
-    Serial.print("initialization failed");
-    }
+  // status=bme.begin(0x76);
+  //   if(status==false){
+  //   Serial.print("initialization failed");
+
+  //WHEATSTONE_____WHEATSTONE_____/WHEATSTONE_____WHEATSTONE_____
+    myScale.set_scale();              // initialize loadcell by placing a known weight on it
+    delay(5000);                      // let the loadcell settle
+    myScale.tare(0);                   // set the tare weight (or zero )
+    myScale.set_scale(cal_factor);   // adjust when calibrating scale to desired units
+    //long zero_factor=scale.read_average(); //Get a baseline reading
+
 }//THIS IS THE END OF void setup()
 
 
@@ -119,8 +138,7 @@ void loop() {
   //Dust_Sensor();
   //Conveyor();
   //Distance_sensor();
-  Wheatstone_Bridge();
-  Serial.print("kfjornsofgj ");
+  Wheatstone_Br();
 
 //   if ((millis()-last)>120000) {           //connect - disconnect from dashboard
 //       Serial.printf("Pinging MQTT \n");
@@ -164,21 +182,21 @@ void loop() {
 
 // Function to connect and reconnect as necessary to the MQTT server.
 // Should be called in the loop function and it will take care if connecting.
-void MQTT_connect() {
-  int8_t ret;
-  // Stop if already connected.
-  if (mqtt.connected()) {
-    return;
-  }
-  Serial.print("Connecting to MQTT... ");
-  while ((ret = mqtt.connect()) != 0) { // connect will return 0 for connected
-       Serial.println(mqtt.connectErrorString(ret));
-       Serial.println("Retrying MQTT connection in 5 seconds...");
-       mqtt.disconnect();
-       delay(5000);  // wait 5 seconds
-  }
-  Serial.println("MQTT Connected!");
-}
+// void MQTT_connect() {
+//   int8_t ret;
+//   // Stop if already connected.
+//   if (mqtt.connected()) {
+//     return;
+//   }
+//   Serial.print("Connecting to MQTT... ");
+//   while ((ret = mqtt.connect()) != 0) { // connect will return 0 for connected
+//        Serial.println(mqtt.connectErrorString(ret));
+//        Serial.println("Retrying MQTT connection in 5 seconds...");
+//        mqtt.disconnect();
+//        delay(5000);  // wait 5 seconds
+//   }
+//   Serial.println("MQTT Connected!");
+// }
 
 // void sync_my_time()       // This function ensures the Argon clock is up to date
 //   {
@@ -204,60 +222,60 @@ void MQTT_connect() {
 //   delay (2000) ; // only loop every 2 seconds
 // }
 
-void door_hopper() {      
-  myServo.write(180);
-  //Serial.printf("angle hopper door open %i \n",myServo.read());
-  delay(1000);          // TODO: while weight is too light keep hopper open
-  myServo.write(155);
-  delay(1000);          // FIXME:close hopper door when weight is in range
-  //Serial.printf("angle hopper door closed %i \n",myServo.read());
-}
+// void door_hopper() {      
+//   myServo.write(180);
+//   //Serial.printf("angle hopper door open %i \n",myServo.read());
+//   delay(1000);          // TODO: while weight is too light keep hopper open
+//   myServo.write(155);
+//   delay(1000);          // FIXME:close hopper door when weight is in range
+//   //Serial.printf("angle hopper door closed %i \n",myServo.read());
+// }
 
-void BME280() {
-  tempC=(bme.readTemperature()*9.0/5+32);
-  //Serial.printf("tempF=%0.2f \n",tempC);
-  pressPA=bme.readPressure()/100.0*0.0002953;
-  //Serial.printf("pressPA=%0.2finHg \n",pressPA);
-  humidRH=bme.readHumidity();
-  //Serial.printf("humidRH=%0.2f \n",humidRH);
-}
+// void BME280() {
+//   tempC=(bme.readTemperature()*9.0/5+32);
+//   //Serial.printf("tempF=%0.2f \n",tempC);
+//   pressPA=bme.readPressure()/100.0*0.0002953;
+//   //Serial.printf("pressPA=%0.2finHg \n",pressPA);
+//   humidRH=bme.readHumidity();
+//   //Serial.printf("humidRH=%0.2f \n",humidRH);
+// }
 
-void Moisture(){
-//   moisture=analogRead(A1);
-//   Serial.printf("Moisture content is %i \n",moisture);
-//   if(moisture>2500){
-//     digitalWrite(A0,HIGH);    //make Argon pin A0 HIGH 
-//     Serial.println("the motor is on") ;
-//     delay(500);
-//     digitalWrite(A0,LOW);      //if the dashboard box toggled a 0 make Argon pin A0 low
+// void Moisture(){
+// //   moisture=analogRead(A1);
+// //   Serial.printf("Moisture content is %i \n",moisture);
+// //   if(moisture>2500){
+// //     digitalWrite(A0,HIGH);    //make Argon pin A0 HIGH 
+// //     Serial.println("the motor is on") ;
+// //     delay(500);
+// //     digitalWrite(A0,LOW);      //if the dashboard box toggled a 0 make Argon pin A0 low
+// //   }
+// //   else{
+// //     digitalWrite(A0,LOW);
+// //   }
+// }
+
+// void Air_Quality_Sensor(){  
+//   sensor.slope();
+//   airQuality=sensor.getValue();
+//   //Serial.printf("airQuality %i \n",airQuality);
+//   //delay(3000);
 //   }
-//   else{
-//     digitalWrite(A0,LOW);
+
+// void Dust_Sensor(){ 
+//     duration = pulseIn(A0,LOW);
+//     lowpulseoccupancy = lowpulseoccupancy+duration;
+//     if ((millis()-starttime) > sampletime_ms) {        //if the sampel time == 30s
+//         ratio = lowpulseoccupancy/(sampletime_ms*10.0);  // Integer percentage 0=>100
+//         concentration = 1.1*pow(ratio,3)-3.8*pow(ratio,2)+520*ratio+0.62; // using spec sheet curve
+//         //Serial.printf("lowpulseoccupancy=%i, ratio=%f, concentration=%f \n",lowpulseoccupancy,ratio,concentration);
+//         lowpulseoccupancy = 0;
+//         //Serial.println("Dust is working");
+//         dustConsentrate=concentration;
+//         starttime = millis();
+//     }
 //   }
-}
 
-void Air_Quality_Sensor(){  
-  sensor.slope();
-  airQuality=sensor.getValue();
-  //Serial.printf("airQuality %i \n",airQuality);
-  //delay(3000);
-  }
-
-void Dust_Sensor(){ 
-    duration = pulseIn(A0,LOW);
-    lowpulseoccupancy = lowpulseoccupancy+duration;
-    if ((millis()-starttime) > sampletime_ms) {        //if the sampel time == 30s
-        ratio = lowpulseoccupancy/(sampletime_ms*10.0);  // Integer percentage 0=>100
-        concentration = 1.1*pow(ratio,3)-3.8*pow(ratio,2)+520*ratio+0.62; // using spec sheet curve
-        //Serial.printf("lowpulseoccupancy=%i, ratio=%f, concentration=%f \n",lowpulseoccupancy,ratio,concentration);
-        lowpulseoccupancy = 0;
-        //Serial.println("Dust is working");
-        dustConsentrate=concentration;
-        starttime = millis();
-    }
-  }
-
-// void motor_hopper(){            //FIXME:
+//void motor_hopper(){            //FIXME:
 //   if(value==1) {               //if the dashboard box toggled a 1 stored in value
 //     myServo.write(180);        //open hopper door
 //     delay(1000);
@@ -271,23 +289,29 @@ void Dust_Sensor(){
 //   }
 // }
 
-void Conveyor(){
-    // step one revolution  in one direction:
+//void Conveyor(){
+  // step one revolution  in one direction:
   // Serial.println("clockwise");
   // stepper.step(steps*2);
   // delay(2000);
-
-    // step one revolution in the other direction:
+  //
+  // step one revolution in the other direction:
   //Serial.println("counterclockwise");
+  //
+  // stepper.step(-195);
+  // delay(1000);
+//}
 
-  stepper.step(-195);
-  delay(1000);
-}
+// void Distance_sensor(){}
+  
+void Wheatstone_Br() {
+    // Using data from loadcell - be sure arrow on loadcell points toward the Earth
+    weight=myScale.get_units(samples);    // return weight in units set by cal_factor ;
+    delay(4000);                           // add a short wait between readings
+    Serial.printf("weight= %f \n",weight);
 
-// void Distance_sensor(){
-
-// }
-
-Wheatstone_Bridge(){
-
-}
+    // Other useful HX711 methods
+    // rawData = myScale.get_value(samples) ;   // returns raw loadcell reading minus offset
+    // offset = myScale.get_offset() ;            // returns the offset set by tare ();
+    // calibration = myScale.get_scale() ;      // returns the cal_factor used by set_scale ();
+    }
