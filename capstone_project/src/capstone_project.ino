@@ -19,7 +19,7 @@
 
 //stepper stuff
 #include <Stepper.h>
-const int steps=2048;   //2048 steps in one revolution.  This is a constant for this motor.  Change steps in void loop()
+const int steps=1985;   //2048 steps in one revolution.  This is a constant for this motor.  Change steps in void loop()
 Stepper stepper(steps, D2, D4, D3, D5);    //IN1=D2, IN3=D4, IN2=D3, IN4=D5 order conneted to Argon
 
 Adafruit_BME280 bme;
@@ -57,11 +57,11 @@ Adafruit_MQTT_SPARK mqtt(&TheClient,AIO_SERVER,AIO_SERVERPORT,AIO_USERNAME,AIO_K
 //Adafruit_MQTT_Publish mqttObj2 = Adafruit_MQTT_Publish (& mqtt , AIO_USERNAME "/ feeds /FeedNameB ");
 //refer to Class Slides "MQTT Publish and Subscribe"
 //Adafruit_MQTT_Subscribe Receive_From_Cloud = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/waterManually"); //read breadboard & store in a var
-// Adafruit_MQTT_Publish temp_to_Cloud = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/room_temp_chrt");   //publish var to broker with this AIO user name recognized by mqtt
-// Adafruit_MQTT_Publish pressure_to_Cloud = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/bar_pressure");   //publish var to broker with this name
-// Adafruit_MQTT_Publish humidity_to_Cloud = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/humidity");   //publish var to broker with this name
-// Adafruit_MQTT_Publish AQ_to_Cloud = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/air_Quality");   //publish var to broker with this name
-// Adafruit_MQTT_Publish Dust_to_Cloud = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/dust_concentration");   //publish var to broker with this name
+Adafruit_MQTT_Publish temp_to_Cloud = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/room_temp_chrt");   //publish var to broker with this AIO user name recognized by mqtt
+Adafruit_MQTT_Publish pressure_to_Cloud = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/bar_pressure");   //publish var to broker with this name
+Adafruit_MQTT_Publish humidity_to_Cloud = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/humidity");   //publish var to broker with this name
+Adafruit_MQTT_Publish AQ_to_Cloud = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/air_Quality");   //publish var to broker with this name
+Adafruit_MQTT_Publish Dust_to_Cloud = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/dust_concentration");   //publish var to broker with this name
 
 //WHEATSTONE_____WHEATSTONE_____/WHEATSTONE_____WHEATSTONE_____
 // From the Command Palette install the HX711A library , that will give you HX711 .h
@@ -70,7 +70,7 @@ Adafruit_MQTT_SPARK mqtt(&TheClient,AIO_SERVER,AIO_SERVERPORT,AIO_USERNAME,AIO_K
 HX711 myScale(DOUT,CLK);             // any two digital pins myScale(DOUT,CLK)
 
 // FLASH WITH WEIGHT OFF WHEATSTONE THEN ADD THE WEIGHT
-const int cal_factor=1935;          // changing value changes get_units units (lb , g, ton , etc .)
+const int cal_factor=1985;          // changing value changes get_units units (lb , g, ton , etc .)
 const int samples=10;              // number of data points averaged when using get_units or get_value
 float weight, rawData, calibration;
 int offset;
@@ -85,7 +85,7 @@ float var_sent_to_dashboard,tempC,pressPA,humidRH;
 int value,moisture,valueSlider,airQuality,dustConsentrate,status;
 
 // Initialize objects from the lib
-AirQualitySensor sensor(A4);
+AirQualitySensor sensor(A5);
 
 
 void setup() {
@@ -96,18 +96,20 @@ void setup() {
 
   // sync_my_time(); // Ensure the Argon clock is up to date
 
-  // myServo.attach(A2);     //attach the Servo object to a pin
-  // stepper.setSpeed(15);
+  stepper.setSpeed(15);
+  myServo.write(180);
 
-    // text display texts
+  // text display texts
   // display.setTextSize(1);
   // display.setCursor(0,0);
   // display.setTextColor(WHITE);
   // display.display();
   // delay(2000);
-  //pinMode(A4,INPUT);      //Air quality sensor
+  pinMode(A5,INPUT);      //Air quality sensor
   //pinMode(A0,INPUT);      //Dust sensor
-  //pinMode(A2,OUTPUT);     //hopper servo motor
+  pinMode(A2,OUTPUT);     //hopper servo motor
+  myServo.attach(A2);     //attach the Servo object to a pin
+  myServo.write(180);
 
 
   // Setup MQTT subscription for onoff feed.
@@ -121,7 +123,7 @@ void setup() {
   //WHEATSTONE_____WHEATSTONE_____/WHEATSTONE_____WHEATSTONE_____
     myScale.set_scale();              // initialize loadcell by placing a known weight on it
     delay(5000);                      // let the loadcell settle
-    myScale.tare(0);                   // set the tare weight (or zero )
+    myScale.tare();                   // set the tare weight (or zero )
     myScale.set_scale(cal_factor);   // adjust when calibrating scale to desired units
     //long zero_factor=scale.read_average(); //Get a baseline reading
 
@@ -131,6 +133,7 @@ void setup() {
 void loop() {
   //MQTT_connect();
   //OLED_display();
+  Wheatstone_Br();
   //door_hopper();   
   //BME280();
   //Moisture();
@@ -138,7 +141,6 @@ void loop() {
   //Dust_Sensor();
   //Conveyor();
   //Distance_sensor();
-  Wheatstone_Br();
 
 //   if ((millis()-last)>120000) {           //connect - disconnect from dashboard
 //       Serial.printf("Pinging MQTT \n");
@@ -222,14 +224,34 @@ void loop() {
 //   delay (2000) ; // only loop every 2 seconds
 // }
 
-// void door_hopper() {      
-//   myServo.write(180);
-//   //Serial.printf("angle hopper door open %i \n",myServo.read());
-//   delay(1000);          // TODO: while weight is too light keep hopper open
-//   myServo.write(155);
-//   delay(1000);          // FIXME:close hopper door when weight is in range
-//   //Serial.printf("angle hopper door closed %i \n",myServo.read());
-// }
+void Wheatstone_Br() {
+    // Using data from loadcell - be sure arrow on loadcell points toward the Earth
+    weight=myScale.get_units(samples);    // return weight in units set by cal_factor ;
+    delay(4000);                           // add a short wait between readings
+    Serial.printf("weight= %f \n",weight);
+    // Other useful HX711 methods
+    // rawData = myScale.get_value(samples) ;   // returns raw loadcell reading minus offset
+    // offset = myScale.get_offset() ;            // returns the offset set by tare ();
+    // calibration = myScale.get_scale() ;      // returns the cal_factor used by set_scale ();
+    }
+
+void door_hopper() {      
+  //myServo.write(180);
+  //delay(1000);
+  // if(weight>1000) {         //weight threshold.  Fill the mold and when it goes over-weight close the
+  //   myServo.write(155);         //
+  //   delay(1000);          // TODO: while weight is too light keep hopper open
+  // }
+  myServo.write(180);
+  Serial.printf("angle hopper door open %i \n",myServo.read());
+
+  delay(1000);
+  myServo.write(155);
+  delay(1000);          // FIXME:close hopper door when weight is in range
+  Serial.printf("angle hopper door open %i \n",myServo.read());
+
+  //Serial.printf("angle hopper door closed %i \n",myServo.read());
+}
 
 // void BME280() {
 //   tempC=(bme.readTemperature()*9.0/5+32);
@@ -304,14 +326,3 @@ void loop() {
 
 // void Distance_sensor(){}
   
-void Wheatstone_Br() {
-    // Using data from loadcell - be sure arrow on loadcell points toward the Earth
-    weight=myScale.get_units(samples);    // return weight in units set by cal_factor ;
-    delay(4000);                           // add a short wait between readings
-    Serial.printf("weight= %f \n",weight);
-
-    // Other useful HX711 methods
-    // rawData = myScale.get_value(samples) ;   // returns raw loadcell reading minus offset
-    // offset = myScale.get_offset() ;            // returns the offset set by tare ();
-    // calibration = myScale.get_scale() ;      // returns the cal_factor used by set_scale ();
-    }
