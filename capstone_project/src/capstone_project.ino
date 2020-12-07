@@ -19,7 +19,7 @@
 
 //stepper stuff
 #include <Stepper.h>
-const int steps=1985;   //2048 steps in one revolution.  This is a constant for this motor.  Change steps in void loop()
+const int steps=2048;   //2048 steps in one revolution.  This is a constant for this motor.  Change steps in void loop()
 Stepper stepper(steps, D2, D4, D3, D5);    //IN1=D2, IN3=D4, IN2=D3, IN4=D5 order conneted to Argon
 
 Adafruit_BME280 bme;
@@ -105,12 +105,12 @@ void setup() {
   // display.setTextColor(WHITE);
   // display.display();
   // delay(2000);
-  pinMode(A5,INPUT);      //Air quality sensor
+  //pinMode(A5,INPUT);      //Air quality sensor
   //pinMode(A0,INPUT);      //Dust sensor
   pinMode(A2,OUTPUT);     //hopper servo motor
+
   myServo.attach(A2);     //attach the Servo object to a pin
   myServo.write(180);
-
 
   // Setup MQTT subscription for onoff feed.
   //mqtt.subscribe(&TempF);
@@ -134,7 +134,7 @@ void loop() {
   //MQTT_connect();
   //OLED_display();
   Wheatstone_Br();
-  //door_hopper();   
+  door_hopper();   
   //BME280();
   //Moisture();
   //Air_Quality_Sensor();
@@ -227,7 +227,7 @@ void loop() {
 void Wheatstone_Br() {
     // Using data from loadcell - be sure arrow on loadcell points toward the Earth
     weight=myScale.get_units(samples);    // return weight in units set by cal_factor ;
-    delay(4000);                           // add a short wait between readings
+    //delay(4000);                           // add a short wait between readings
     Serial.printf("weight= %f \n",weight);
     // Other useful HX711 methods
     // rawData = myScale.get_value(samples) ;   // returns raw loadcell reading minus offset
@@ -236,22 +236,16 @@ void Wheatstone_Br() {
     }
 
 void door_hopper() {      
-  //myServo.write(180);
-  //delay(1000);
-  // if(weight>1000) {         //weight threshold.  Fill the mold and when it goes over-weight close the
-  //   myServo.write(155);         //
-  //   delay(1000);          // TODO: while weight is too light keep hopper open
-  // }
-  myServo.write(180);
-  Serial.printf("angle hopper door open %i \n",myServo.read());
-
-  delay(1000);
-  myServo.write(155);
-  delay(1000);          // FIXME:close hopper door when weight is in range
-  Serial.printf("angle hopper door open %i \n",myServo.read());
-
-  //Serial.printf("angle hopper door closed %i \n",myServo.read());
+  if(weight<400) {
+    myServo.write(180);
+    //Serial.printf("angle hopper door open %i \n",myServo.read());
+  }
+  else {
+    myServo.write(155);
+    //Serial.printf("angle hopper door open %i \n",myServo.read());
+  }
 }
+
 
 // void BME280() {
 //   tempC=(bme.readTemperature()*9.0/5+32);
