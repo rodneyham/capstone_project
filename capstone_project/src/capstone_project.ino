@@ -70,7 +70,7 @@ Adafruit_MQTT_Publish Dust_to_Cloud = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME 
 HX711 myScale(DOUT,CLK);             // any two digital pins myScale(DOUT,CLK)
 
 // FLASH WITH WEIGHT OFF WHEATSTONE THEN ADD THE WEIGHT
-const int cal_factor=1985;          // changing value changes get_units units (lb , g, ton , etc .)
+const int cal_factor=1933;          // changing value changes get_units units (lb , g, ton , etc .)
 const int samples=10;              // number of data points averaged when using get_units or get_value
 float weight, rawData, calibration;
 int offset;
@@ -241,7 +241,7 @@ void door_hopper() {
     //Serial.printf("angle hopper door open %i \n",myServo.read());
   }
   else {
-    myServo.write(155);
+    myServo.write(165);
     //Serial.printf("angle hopper door open %i \n",myServo.read());
   }
 }
