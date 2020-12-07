@@ -33,6 +33,7 @@ void door_hopper();
 void BME280();
 void Moisture();
 void Air_Quality_Sensor();
+void Dust_Sensor();
 #line 22 "c:/Users/yendo/Documents/IoT/IoT-2/capstone_project/capstone_project/src/capstone_project.ino"
 const int steps=2048;   //2048 steps in one revolution.  This is a constant for this motor.  Change steps in void loop()
 Stepper stepper(steps, D2, D4, D3, D5);    //IN1=D2, IN3=D4, IN2=D3, IN4=D5 order conneted to Argon
@@ -92,12 +93,19 @@ int offset;
 
 
 /************Declare Variables************/
-unsigned long last,lastTime,duration,starttime;
-unsigned long sampletime_ms=30000;          //sample 30s ;
-unsigned long lowpulseoccupancy=0;
+//Dust_Sensor
+unsigned long lastTime;
+unsigned long duration;
+unsigned long starttime;
+unsigned long publish_time_ms = 12000;//sample 30s ;
+unsigned long lowpulseoccupancy = 0;
 float ratio=0, concentration=0;
+int dustConsentrate;
+
+
+unsigned long last;
 float var_sent_to_dashboard,tempC,pressPA,humidRH;
-int value,moisture,valueSlider,airQuality,dustConsentrate,status;
+int value,moisture,valueSlider,airQuality,status;
 
 // Initialize objects from the lib
 AirQualitySensor sensor(A5);
@@ -121,7 +129,7 @@ void setup() {
   // display.display();
   // delay(2000);
   pinMode(A5,INPUT);      //Air quality sensor
-  //pinMode(A0,INPUT);      //Dust sensor
+  pinMode(A0,INPUT);      //Dust sensor
   pinMode(A2,OUTPUT);     //hopper servo motor
 
   myServo.attach(A2);     //attach the Servo object to a pin
@@ -151,10 +159,7 @@ void loop() {
   //OLED_display();
   Wheatstone_Br();
   door_hopper();   
-  BME280();
-  Moisture();
-  Air_Quality_Sensor();
-  //Dust_Sensor();
+  //Moisture();
   //Conveyor();
   //Distance_sensor();
 
@@ -182,9 +187,12 @@ void loop() {
 //   //   delay(10000);
 //   //   digitalWrite(D7,LOW);
 //   //   }
-    if(millis()-lastTime>12000) {    //publish to broker                 
+    if(millis()-lastTime>publish_time_ms) {    //publish to broker                 
     if(mqtt.Update()) {             //if mqtt ready to receive data then use publish   
-    Serial.println("publishing to cloud");                        
+    Serial.println("publishing to cloud");
+      BME280();
+      Air_Quality_Sensor();
+      Dust_Sensor();
       temp_to_Cloud.publish(tempC); 
       pressure_to_Cloud.publish(pressPA);
       humidity_to_Cloud.publish(humidRH);
@@ -266,9 +274,13 @@ void door_hopper() {
 
 void BME280() {
   tempC=(bme.readTemperature()*9.0/5+32);
-  //Serial.printf("tempF=%0.2f \n",tempC);
-  pressPA=bme.readPressure()/100.0*0.0002953;
+  if(tempC>75) {
+    Serial.printf("WARNING: tempF=%0.2f \n",tempC);
+  }
+  pressPA=bme.readPressure()/(100.0*0.0002953);
+  //if(pressPA<100) {
   //Serial.printf("pressPA=%0.2finHg \n",pressPA);
+  //}
   humidRH=bme.readHumidity();
   //Serial.printf("humidRH=%0.2f \n",humidRH);
 }
@@ -290,23 +302,27 @@ void Moisture(){
 void Air_Quality_Sensor(){  
   sensor.slope();
   airQuality=sensor.getValue();
-  //Serial.printf("airQuality %i \n",airQuality);
-  //delay(3000);
+  if(airQuality>600){
+  Serial.printf("WARNING: Matertial is contaminated %i \n",airQuality);
+  delay(3000);
   }
+}
 
-// void Dust_Sensor(){ 
-//     duration = pulseIn(A0,LOW);
-//     lowpulseoccupancy = lowpulseoccupancy+duration;
-//     if ((millis()-starttime) > sampletime_ms) {        //if the sampel time == 30s
-//         ratio = lowpulseoccupancy/(sampletime_ms*10.0);  // Integer percentage 0=>100
-//         concentration = 1.1*pow(ratio,3)-3.8*pow(ratio,2)+520*ratio+0.62; // using spec sheet curve
-//         //Serial.printf("lowpulseoccupancy=%i, ratio=%f, concentration=%f \n",lowpulseoccupancy,ratio,concentration);
-//         lowpulseoccupancy = 0;
-//         //Serial.println("Dust is working");
-//         dustConsentrate=concentration;
-//         starttime = millis();
-//     }
-//   }
+void Dust_Sensor(){ 
+    duration = pulseIn(A0,LOW);
+    lowpulseoccupancy = lowpulseoccupancy+duration;
+    if ((millis()-starttime) > publish_time_ms) {        //if the sample time == 30s
+        ratio = lowpulseoccupancy/(publish_time_ms*10.0);  // Integer percentage 0=>100
+        concentration = 1.1*pow(ratio,3)-3.8*pow(ratio,2)+520*ratio+0.62; // using spec sheet curve
+        //Serial.printf("lowpulseoccupancy=%i, ratio=%f, concentration=%f \n",lowpulseoccupancy,ratio,concentration);
+        lowpulseoccupancy = 0;
+        dustConsentrate=concentration;
+        if(dustConsentrate>5) {
+        Serial.printf("WARNING: Dust concentration level %i \n",dustConsentrate );
+        }
+        starttime = millis();
+    }
+  }
 
 
 //void Conveyor(){
