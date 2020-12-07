@@ -134,8 +134,8 @@ void setup() {
 void loop() {
   MQTT_connect();
   //OLED_display();
-  //Wheatstone_Br();
-  //door_hopper();   
+  Wheatstone_Br();
+  door_hopper();   
   BME280();
   Moisture();
   Air_Quality_Sensor();
@@ -167,7 +167,7 @@ void loop() {
 //   //   delay(10000);
 //   //   digitalWrite(D7,LOW);
 //   //   }
-    if(millis()-lastTime>11000) {    //publish to broker                 
+    if(millis()-lastTime>12000) {    //publish to broker                 
     if(mqtt.Update()) {             //if mqtt ready to receive data then use publish   
     Serial.println("publishing to cloud");                        
       temp_to_Cloud.publish(tempC); 
@@ -251,11 +251,11 @@ void door_hopper() {
 
 void BME280() {
   tempC=(bme.readTemperature()*9.0/5+32);
-  Serial.printf("tempF=%0.2f \n",tempC);
+  //Serial.printf("tempF=%0.2f \n",tempC);
   pressPA=bme.readPressure()/100.0*0.0002953;
-  Serial.printf("pressPA=%0.2finHg \n",pressPA);
+  //Serial.printf("pressPA=%0.2finHg \n",pressPA);
   humidRH=bme.readHumidity();
-  Serial.printf("humidRH=%0.2f \n",humidRH);
+  //Serial.printf("humidRH=%0.2f \n",humidRH);
 }
 
 void Moisture(){
