@@ -27,8 +27,12 @@
 #include <Stepper.h>
 void setup();
 void loop();
+void MQTT_connect();
 void Wheatstone_Br();
 void door_hopper();
+void BME280();
+void Moisture();
+void Air_Quality_Sensor();
 #line 22 "c:/Users/yendo/Documents/IoT/IoT-2/capstone_project/capstone_project/src/capstone_project.ino"
 const int steps=2048;   //2048 steps in one revolution.  This is a constant for this motor.  Change steps in void loop()
 Stepper stepper(steps, D2, D4, D3, D5);    //IN1=D2, IN3=D4, IN2=D3, IN4=D5 order conneted to Argon
@@ -37,8 +41,8 @@ Adafruit_BME280 bme;
 
 Servo myServo;      //create object myServo of class Servo
 
-SYSTEM_MODE ( SEMI_AUTOMATIC );     //SEMI_AUTOMATIC to skip wifi internet connection
-//SYSTEM_MODE ( AUTOMATIC );     //SEMI_AUTOMATIC to skip wifi internet connection
+//SYSTEM_MODE ( SEMI_AUTOMATIC );     //SEMI_AUTOMATIC to skip wifi internet connection
+SYSTEM_MODE ( AUTOMATIC );     //SEMI_AUTOMATIC to skip wifi internet connection
 
 
 // #define OLED_RESET D4
@@ -116,7 +120,7 @@ void setup() {
   // display.setTextColor(WHITE);
   // display.display();
   // delay(2000);
-  //pinMode(A5,INPUT);      //Air quality sensor
+  pinMode(A5,INPUT);      //Air quality sensor
   //pinMode(A0,INPUT);      //Dust sensor
   pinMode(A2,OUTPUT);     //hopper servo motor
 
@@ -124,12 +128,13 @@ void setup() {
   myServo.write(180);
 
   // Setup MQTT subscription for onoff feed.
-  //mqtt.subscribe(&TempF);
+  // mqtt.subscribe(&TempF);
   // mqtt.subscribe(&Receive_From_Cloud);    //Receive DATA from io.adafruit.com dashboard var "Receive_From_cloud"
  
-  // status=bme.begin(0x76);
-  //   if(status==false){
-  //   Serial.print("initialization failed");
+  status=bme.begin(0x76);
+    if(status==false){
+    Serial.print("initialization failed");
+    }
 
   //WHEATSTONE_____WHEATSTONE_____/WHEATSTONE_____WHEATSTONE_____
     myScale.set_scale();              // initialize loadcell by placing a known weight on it
@@ -142,25 +147,25 @@ void setup() {
 
 
 void loop() {
-  //MQTT_connect();
+  MQTT_connect();
   //OLED_display();
-  Wheatstone_Br();
-  door_hopper();   
-  //BME280();
-  //Moisture();
-  //Air_Quality_Sensor();
+  //Wheatstone_Br();
+  //door_hopper();   
+  BME280();
+  Moisture();
+  Air_Quality_Sensor();
   //Dust_Sensor();
   //Conveyor();
   //Distance_sensor();
 
-//   if ((millis()-last)>120000) {           //connect - disconnect from dashboard
-//       Serial.printf("Pinging MQTT \n");
-//       if(! mqtt.ping()) {
-//         Serial.printf("Disconnecting \n");
-//         mqtt.disconnect();
-//       }
-//       last = millis();
-//   }
+  if ((millis()-last)>120000) {           //connect - disconnect from dashboard
+      Serial.printf("Pinging MQTT \n");
+      if(! mqtt.ping()) {
+        Serial.printf("Disconnecting \n");
+        mqtt.disconnect();
+      }
+      last = millis();
+  }
 
 // //     // this is our 'wait for incoming subscription packets' busy subloop
 // //   // try to spend your time here
@@ -177,17 +182,18 @@ void loop() {
 //   //   delay(10000);
 //   //   digitalWrite(D7,LOW);
 //   //   }
-//     if(millis()-lastTime>10000) {    //publish to broker                 
-//     if(mqtt.Update()) {             //if mqtt ready to receive data then use publish                           
-//       temp_to_Cloud.publish(tempC); 
-//       pressure_to_Cloud.publish(pressPA);
-//       humidity_to_Cloud.publish(humidRH);
-//       AQ_to_Cloud.publish(airQuality);
-//       Dust_to_Cloud.publish(dustConsentrate);
-//       //moisture_to_Cloud.publish(moisture); 
-//     } 
-//     lastTime = millis();
-//   }
+    if(millis()-lastTime>11000) {    //publish to broker                 
+    if(mqtt.Update()) {             //if mqtt ready to receive data then use publish   
+    Serial.println("publishing to cloud");                        
+      temp_to_Cloud.publish(tempC); 
+      pressure_to_Cloud.publish(pressPA);
+      humidity_to_Cloud.publish(humidRH);
+      AQ_to_Cloud.publish(airQuality);
+      Dust_to_Cloud.publish(dustConsentrate);
+      //moisture_to_Cloud.publish(moisture); 
+    } 
+    lastTime = millis();
+  }
 
 }//THIS IS THE END OF void loop()
   
@@ -195,21 +201,21 @@ void loop() {
 
 // Function to connect and reconnect as necessary to the MQTT server.
 // Should be called in the loop function and it will take care if connecting.
-// void MQTT_connect() {
-//   int8_t ret;
-//   // Stop if already connected.
-//   if (mqtt.connected()) {
-//     return;
-//   }
-//   Serial.print("Connecting to MQTT... ");
-//   while ((ret = mqtt.connect()) != 0) { // connect will return 0 for connected
-//        Serial.println(mqtt.connectErrorString(ret));
-//        Serial.println("Retrying MQTT connection in 5 seconds...");
-//        mqtt.disconnect();
-//        delay(5000);  // wait 5 seconds
-//   }
-//   Serial.println("MQTT Connected!");
-// }
+void MQTT_connect() {
+  int8_t ret;
+  // Stop if already connected.
+  if (mqtt.connected()) {
+    return;
+  }
+  Serial.print("Connecting to MQTT... ");
+  while ((ret = mqtt.connect()) != 0) { // connect will return 0 for connected
+       Serial.println(mqtt.connectErrorString(ret));
+       Serial.println("Retrying MQTT connection in 5 seconds...");
+       mqtt.disconnect();
+       delay(5000);  // wait 5 seconds
+  }
+  Serial.println("MQTT Connected!");
+}
 
 // void sync_my_time()       // This function ensures the Argon clock is up to date
 //   {
@@ -258,35 +264,35 @@ void door_hopper() {
 }
 
 
-// void BME280() {
-//   tempC=(bme.readTemperature()*9.0/5+32);
-//   //Serial.printf("tempF=%0.2f \n",tempC);
-//   pressPA=bme.readPressure()/100.0*0.0002953;
-//   //Serial.printf("pressPA=%0.2finHg \n",pressPA);
-//   humidRH=bme.readHumidity();
-//   //Serial.printf("humidRH=%0.2f \n",humidRH);
-// }
+void BME280() {
+  tempC=(bme.readTemperature()*9.0/5+32);
+  Serial.printf("tempF=%0.2f \n",tempC);
+  pressPA=bme.readPressure()/100.0*0.0002953;
+  Serial.printf("pressPA=%0.2finHg \n",pressPA);
+  humidRH=bme.readHumidity();
+  Serial.printf("humidRH=%0.2f \n",humidRH);
+}
 
-// void Moisture(){
-// //   moisture=analogRead(A1);
-// //   Serial.printf("Moisture content is %i \n",moisture);
-// //   if(moisture>2500){
-// //     digitalWrite(A0,HIGH);    //make Argon pin A0 HIGH 
-// //     Serial.println("the motor is on") ;
-// //     delay(500);
-// //     digitalWrite(A0,LOW);      //if the dashboard box toggled a 0 make Argon pin A0 low
-// //   }
-// //   else{
-// //     digitalWrite(A0,LOW);
-// //   }
-// }
-
-// void Air_Quality_Sensor(){  
-//   sensor.slope();
-//   airQuality=sensor.getValue();
-//   //Serial.printf("airQuality %i \n",airQuality);
-//   //delay(3000);
+void Moisture(){
+//   moisture=analogRead(A1);
+//   Serial.printf("Moisture content is %i \n",moisture);
+//   if(moisture>2500){
+//     digitalWrite(A0,HIGH);    //make Argon pin A0 HIGH 
+//     Serial.println("the motor is on") ;
+//     delay(500);
+//     digitalWrite(A0,LOW);      //if the dashboard box toggled a 0 make Argon pin A0 low
 //   }
+//   else{
+//     digitalWrite(A0,LOW);
+//   }
+}
+
+void Air_Quality_Sensor(){  
+  sensor.slope();
+  airQuality=sensor.getValue();
+  //Serial.printf("airQuality %i \n",airQuality);
+  //delay(3000);
+  }
 
 // void Dust_Sensor(){ 
 //     duration = pulseIn(A0,LOW);
@@ -302,19 +308,6 @@ void door_hopper() {
 //     }
 //   }
 
-//void motor_hopper(){            //FIXME:
-//   if(value==1) {               //if the dashboard box toggled a 1 stored in value
-//     myServo.write(180);        //open hopper door
-//     delay(1000);
-//     myServo.write(0);         //material weight is reached - close hopper door
-//     delay(1000);
-//     //myServo.read();
-//     Serial.print("the motor is on") ;
-//   }
-//   else{
-//      digitalWrite(A0,LOW);      //if the dashboard box toggled a 0 make Argon pin A0 low
-//   }
-// }
 
 //void Conveyor(){
   // step one revolution  in one direction:
