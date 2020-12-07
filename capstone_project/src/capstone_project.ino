@@ -141,10 +141,10 @@ void setup() {
 void loop() {
   MQTT_connect();
   //OLED_display();
-  Wheatstone_Br();
-  door_hopper();   
+  //Wheatstone_Br();
+  //door_hopper();   
   //Moisture();
-  //Conveyor();
+  Conveyor();
   //Distance_sensor();
 
   if ((millis()-last)>120000) {           //connect - disconnect from dashboard
@@ -255,7 +255,6 @@ void door_hopper() {
   }
 }
 
-
 void BME280() {
   tempC=(bme.readTemperature()*9.0/5+32);
   if(tempC>75) {
@@ -309,7 +308,7 @@ void Dust_Sensor(){
   }
 
 
-//void Conveyor(){
+void Conveyor(){
   // step one revolution  in one direction:
   // Serial.println("clockwise");
   // stepper.step(steps*2);
@@ -317,10 +316,9 @@ void Dust_Sensor(){
   //
   // step one revolution in the other direction:
   //Serial.println("counterclockwise");
-  //
-  // stepper.step(-195);
-  // delay(1000);
-//}
+  stepper.step(-195);
+  delay(1000);
+}
 
 // void Distance_sensor(){}
   
