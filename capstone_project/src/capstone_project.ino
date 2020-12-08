@@ -26,8 +26,8 @@ Adafruit_BME280 bme;
 
 Servo myServo;      //create object myServo of class Servo
 
-//SYSTEM_MODE ( SEMI_AUTOMATIC );     //SEMI_AUTOMATIC to skip wifi internet connection
-SYSTEM_MODE ( AUTOMATIC );     //SEMI_AUTOMATIC to skip wifi internet connection
+SYSTEM_MODE ( SEMI_AUTOMATIC );     //SEMI_AUTOMATIC to skip wifi internet connection
+//SYSTEM_MODE ( AUTOMATIC );     //SEMI_AUTOMATIC to skip wifi internet connection
 
 
 // #define OLED_RESET D4
@@ -104,7 +104,7 @@ void setup() {
   // sync_my_time(); // Ensure the Argon clock is up to date
 
   stepper.setSpeed(15);
-  myServo.write(180);
+  myServo.write(165);
 
   // text display texts
   // display.setTextSize(1);
@@ -118,7 +118,7 @@ void setup() {
   pinMode(A2,OUTPUT);     //hopper servo motor
 
   myServo.attach(A2);     //attach the Servo object to a pin
-  myServo.write(180);
+  myServo.write(165);
 
   // Setup MQTT subscription for onoff feed.
   // mqtt.subscribe(&TempF);
@@ -140,22 +140,22 @@ void setup() {
 
 
 void loop() {
-  MQTT_connect();
+  //MQTT_connect();
   //OLED_display();
-  //Wheatstone_Br();
-  //door_hopper();   
+  Wheatstone_Br();
+  door_hopper();   
   //Moisture();
-  //Conveyor();
-  line_sensor();
+  //round_table();
+  //line_sensor();
 
-  if ((millis()-last)>120000) {           //connect - disconnect from dashboard
-      Serial.printf("Pinging MQTT \n");
-      if(! mqtt.ping()) {
-        Serial.printf("Disconnecting \n");
-        mqtt.disconnect();
-      }
-      last = millis();
-  }
+  // if ((millis()-last)>120000) {           //connect - disconnect from dashboard
+  //     Serial.printf("Pinging MQTT \n");
+  //     if(! mqtt.ping()) {
+  //       Serial.printf("Disconnecting \n");
+  //       mqtt.disconnect();
+  //     }
+  //     last = millis();
+  // }
 
 // //     // this is our 'wait for incoming subscription packets' busy subloop
 // //   // try to spend your time here
@@ -172,21 +172,21 @@ void loop() {
 //   //   delay(10000);
 //   //   digitalWrite(D7,LOW);
 //   //   }
-    if(millis()-lastTime>publish_time_ms) {    //publish to broker                 
-    if(mqtt.Update()) {             //if mqtt ready to receive data then use publish   
-    Serial.println("publishing to cloud");
-      BME280();
-      Air_Quality_Sensor();
-      Dust_Sensor();
-      temp_to_Cloud.publish(tempC); 
-      pressure_to_Cloud.publish(pressPA);
-      humidity_to_Cloud.publish(humidRH);
-      AQ_to_Cloud.publish(airQuality);
-      Dust_to_Cloud.publish(dustConsentrate);
-      //moisture_to_Cloud.publish(moisture); 
-    } 
-    lastTime = millis();
-  }
+  //   if(millis()-lastTime>publish_time_ms) {    //publish to broker                 
+  //   if(mqtt.Update()) {             //if mqtt ready to receive data then use publish   
+  //   Serial.println("publishing to cloud");
+  //     BME280();
+  //     Air_Quality_Sensor();
+  //     Dust_Sensor();
+  //     temp_to_Cloud.publish(tempC); 
+  //     pressure_to_Cloud.publish(pressPA);
+  //     humidity_to_Cloud.publish(humidRH);
+  //     AQ_to_Cloud.publish(airQuality);
+  //     Dust_to_Cloud.publish(dustConsentrate);
+  //     //moisture_to_Cloud.publish(moisture); 
+  //   } 
+  //   lastTime = millis();
+  // }
 
 }//THIS IS THE END OF void loop()
   
@@ -251,8 +251,11 @@ void door_hopper() {
     //Serial.printf("angle hopper door open %i \n",myServo.read());
   }
   else {
-    myServo.write(165);
-    //Serial.printf("angle hopper door open %i \n",myServo.read());
+    if(myServo.read()==180){
+      myServo.write(165);
+      stepper.step(-195);
+      //Serial.printf("angle hopper door closed %i \n",myServo.read());
+    }
   }
 }
 
@@ -309,26 +312,26 @@ void Dust_Sensor(){
   }
 
 
-void Conveyor(){
+void round_table(){
   // step one revolution  in one direction:
   // Serial.println("clockwise");
   // stepper.step(steps*2);
   // delay(2000);
   //
   // step one revolution in the other direction:
-  //Serial.println("counterclockwise");
+  Serial.println("counterclockwise");
   stepper.step(-195);
   delay(1000);
 }
 
-void line_sensor(){
-  if(analogRead(A1)<1000) {
-    Serial.printf("White = %i \n",analogRead(A1));
-    delay(500);
-  }
-  else {
-    Serial.printf("Black = %i \n",analogRead(A1));
-    delay(500);
-  }
-}
+// void line_sensor(){
+//   if(analogRead(A1)<1000) {
+//     Serial.printf("White = %i \n",analogRead(A1));
+//     delay(500);
+//   }
+//   else {
+//     Serial.printf("Black = %i \n",analogRead(A1));
+//     delay(500);
+//   }
+// }
   

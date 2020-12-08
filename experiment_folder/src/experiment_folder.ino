@@ -17,7 +17,8 @@ pinMode(A1,INPUT);
 
 // loop() runs over and over again, as quickly as it can execute.
 void loop() {
-    line_sensor();
+    //line_sensor();
+    round_table();
 }
 
 void line_sensor(){
@@ -29,4 +30,11 @@ void line_sensor(){
     Serial.printf("Black = %i \n",analogRead(A1));
     delay(500);
   }
+}
+
+void round_table(){
+  Serial.println("counterclockwise");
+  stepper.step(-195);
+  delay(1000);
+
 }
