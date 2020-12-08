@@ -2,7 +2,6 @@
 //       THIS IS A GENERATED FILE - DO NOT EDIT       //
 /******************************************************/
 
-#include "Particle.h"
 #line 1 "c:/Users/yendo/Documents/IoT/IoT-2/capstone_project/capstone_project/src/capstone_project.ino"
 /*
  * Project capstone_project
@@ -22,9 +21,12 @@
 #include "Air_Quality_Sensor.h"
 #include "HX711.h"
 
+SYSTEM_MODE(SEMI_AUTOMATIC);     //SEMI_AUTOMATIC to skip wifi internet connection
+//SYSTEM_MODE(AUTOMATIC);     //SEMI_AUTOMATIC to skip wifi internet connection
 
-//stepper stuff
-#include <Stepper.h>
+
+//neopixel--------neopixel---------neopixel
+#include "Particle.h"           //used for neopixel
 void setup();
 void loop();
 void MQTT_connect();
@@ -35,17 +37,24 @@ void Moisture();
 void Air_Quality_Sensor();
 void Dust_Sensor();
 void round_table();
-#line 22 "c:/Users/yendo/Documents/IoT/IoT-2/capstone_project/capstone_project/src/capstone_project.ino"
+#line 25 "c:/Users/yendo/Documents/IoT/IoT-2/capstone_project/capstone_project/src/capstone_project.ino"
+#include <neopixel.h>           //used for neopixel
+#include <colors.h>              //used for neopixel
+#define PIXEL_COUNT 13
+#define PIXEL_PIN A3
+#define PIXEL_TYPE WS2812B
+Adafruit_NeoPixel pixel(PIXEL_COUNT, PIXEL_PIN, PIXEL_TYPE);
+int _delay=125;
+//neopixel--------neopixel---------neopixel
+
+//stepper stuff
+#include <Stepper.h>
 const int steps=2048;   //2048 steps in one revolution.  This is a constant for this motor.  Change steps in void loop()
 Stepper stepper(steps, D2, D4, D3, D5);    //IN1=D2, IN3=D4, IN2=D3, IN4=D5 order conneted to Argon
 
 Adafruit_BME280 bme;
 
 Servo myServo;      //create object myServo of class Servo
-
-SYSTEM_MODE ( SEMI_AUTOMATIC );     //SEMI_AUTOMATIC to skip wifi internet connection
-//SYSTEM_MODE ( AUTOMATIC );     //SEMI_AUTOMATIC to skip wifi internet connection
-
 
 // #define OLED_RESET D4
 // Adafruit_SSD1306 display(OLED_RESET);
@@ -114,6 +123,13 @@ AirQualitySensor sensor(A5);
 
 void setup() {
   Serial.begin(9600);
+
+//neopixel--------neopixel---------neopixel
+  pixel.begin();  //initalize pixel allows you to talk to them
+  pixel.setBrightness(63);  //how bright to make the pixels
+  pixel.show();   //initalize all off
+//neopixel--------neopixel---------neopixel
+
   // display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3D (for the 128x64)
   // display.clearDisplay();   // clears the screen and buffer
   // delay(100);                             //wait for Serial Monitor to startup
@@ -159,6 +175,7 @@ void setup() {
 void loop() {
   //MQTT_connect();
   //OLED_display();
+  BME280();
   Wheatstone_Br();
   door_hopper();   
   //Moisture();
@@ -255,7 +272,7 @@ void Wheatstone_Br() {
     // Using data from loadcell - be sure arrow on loadcell points toward the Earth
     weight=myScale.get_units(samples);    // return weight in units set by cal_factor ;
     //delay(4000);                           // add a short wait between readings
-    Serial.printf("weight= %f \n",weight);
+    //Serial.printf("weight= %f \n",weight);
     // Other useful HX711 methods
     // rawData = myScale.get_value(samples) ;   // returns raw loadcell reading minus offset
     // offset = myScale.get_offset() ;            // returns the offset set by tare ();
@@ -271,7 +288,7 @@ void door_hopper() {
     if(myServo.read()==180){    //weight is proper and hopper door is still open
       myServo.write(165);       //close hopper door
       delay(500);               //slight delay for all product to fall into mold
-      round_table();       //rotate round table to next position
+      round_table();            //rotate round table to next position
       //Serial.printf("angle hopper door closed %i \n",myServo.read());
     }
   }
@@ -280,14 +297,26 @@ void door_hopper() {
 void BME280() {
   tempC=(bme.readTemperature()*9.0/5+32);
   if(tempC>75) {
+    pixel.clear();  // clear the pixels
+    pixel.show(); 
+    //Light up the pixel ring
+    for(int i=4;i<8;i++){
+      pixel.setPixelColor(i,red);
+      pixel.show();
+      delay(_delay);
+    }
     Serial.printf("WARNING: tempF=%0.2f \n",tempC);
   }
+pixel.clear(); 
+pixel.show(); 
+
   pressPA=bme.readPressure()/(100.0*0.0002953);
   //if(pressPA<100) {
   //Serial.printf("pressPA=%0.2finHg \n",pressPA);
   //}
   humidRH=bme.readHumidity();
   //Serial.printf("humidRH=%0.2f \n",humidRH);
+
 }
 
 void Moisture(){
