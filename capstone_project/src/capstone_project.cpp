@@ -264,15 +264,16 @@ void Wheatstone_Br() {
 
 void door_hopper() {      
   if(weight<400) {
-    myServo.write(180);
+    myServo.write(180);         //if underweight open hopper door
     //Serial.printf("angle hopper door open %i \n",myServo.read());
   }
   else {
-    if(myServo.read()==180){
-      myServo.write(165);
-      stepper.step(-195);
+    if(myServo.read()==180){    //weight is proper and hopper door is still open
+      myServo.write(165);       //close hopper door
+      delay(500);               //slight delay for all product to fall into mold
+      round_table();       //rotate round table to next position
+      //Serial.printf("angle hopper door closed %i \n",myServo.read());
     }
-   //Serial.printf("angle hopper door open %i \n",myServo.read());
   }
 }
 
@@ -336,9 +337,9 @@ void round_table(){
   // delay(2000);
   //
   // step one revolution in the other direction:
-  Serial.println("counterclockwise");
+  //Serial.println("counterclockwise");
   stepper.step(-195);
-  delay(1000);
+  //delay(1000);
 }
 
 // void line_sensor(){
