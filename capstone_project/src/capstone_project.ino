@@ -28,7 +28,7 @@ SYSTEM_MODE(SEMI_AUTOMATIC);     //SEMI_AUTOMATIC to skip wifi internet connecti
 #define PIXEL_PIN A3
 #define PIXEL_TYPE WS2812B
 Adafruit_NeoPixel pixel(PIXEL_COUNT, PIXEL_PIN, PIXEL_TYPE);
-int _delay=125;
+int _delay=200;
 //neopixel--------neopixel---------neopixel
 
 //stepper stuff
@@ -159,7 +159,9 @@ void setup() {
 void loop() {
   //MQTT_connect();
   //OLED_display();
-  BME280();
+  //BME280();
+  //Dust_Sensor();
+  //Air_Quality_Sensor();
   Wheatstone_Br();
   door_hopper();   
   //Moisture();
@@ -265,15 +267,31 @@ void Wheatstone_Br() {
 
 void door_hopper() {      
   if(weight<400) {
-    myServo.write(180);         //if underweight open hopper door
-    //Serial.printf("angle hopper door open %i \n",myServo.read());
+    myServo.write(180);         //if mold is underweight open hopper door
+    //single pixel going up
+    pixel.clear();
+    pixel.show();   
+    for(int i=0;i<PIXEL_COUNT;i++){
+      pixel.setPixelColor(i,blue);  
+      pixel.show();
+      //delay(500);
+      pixel.clear();
+  }
+    Serial.printf("angle hopper door open %i \n",myServo.read());
   }
   else {
     if(myServo.read()==180){    //weight is proper and hopper door is still open
       myServo.write(165);       //close hopper door
-      delay(500);               //slight delay for all product to fall into mold
+      pixel.clear();
+      pixel.show();   
+      for(int x=PIXEL_COUNT;x>0;x--){
+        pixel.setPixelColor(x,green);  
+        pixel.show();
+        delay(75);
+        pixel.clear();
+      }
+      Serial.printf("angle hopper door closed %i \n",myServo.read());
       round_table();            //rotate round table to next position
-      //Serial.printf("angle hopper door closed %i \n",myServo.read());
     }
   }
 }
@@ -285,22 +303,20 @@ void BME280() {
     pixel.show(); 
     //Light up the pixel ring
     for(int i=4;i<8;i++){
-      pixel.setPixelColor(i,red);
+      pixel.setPixelColor(i,yellow);
       pixel.show();
       delay(_delay);
     }
     Serial.printf("WARNING: tempF=%0.2f \n",tempC);
   }
-pixel.clear(); 
-pixel.show(); 
-
+  pixel.clear(); 
+  pixel.show(); 
   pressPA=bme.readPressure()/(100.0*0.0002953);
   //if(pressPA<100) {
   //Serial.printf("pressPA=%0.2finHg \n",pressPA);
   //}
   humidRH=bme.readHumidity();
   //Serial.printf("humidRH=%0.2f \n",humidRH);
-
 }
 
 void Moisture(){
@@ -321,9 +337,18 @@ void Air_Quality_Sensor(){
   sensor.slope();
   airQuality=sensor.getValue();
   if(airQuality>600){
-  Serial.printf("WARNING: Matertial is contaminated %i \n",airQuality);
-  delay(3000);
+    pixel.clear();  // clear the pixels
+    pixel.show(); 
+    //Light up the pixel ring
+    for(int i=8;i<12;i++){
+      pixel.setPixelColor(i,green);
+      pixel.show();
+      delay(500);
+    }
+    Serial.printf("WARNING: Matertial is contaminated %i \n",airQuality);
   }
+  pixel.clear(); 
+  pixel.show(); 
 }
 
 void Dust_Sensor(){ 
@@ -336,12 +361,32 @@ void Dust_Sensor(){
         lowpulseoccupancy = 0;
         dustConsentrate=concentration;
         if(dustConsentrate>5) {
-        Serial.printf("WARNING: Dust concentration level %i \n",dustConsentrate );
+          pixel.clear();  // clear the pixels
+          pixel.show(); 
+          //rainbow going up
+          int flash=0;
+          while(flash<5){
+            for(int x=0;x<PIXEL_COUNT;x++){
+              //for(int i=0;i<7;i++){
+              pixel.setPixelColor(x,red);
+              //}
+            }
+            pixel.show();
+            delay(_delay);
+            pixel.clear();  // clear the pixels
+            pixel.show(); 
+            delay(_delay);
+
+            flash++;
+            Serial.printf("WARNING: EXPLOSION IMMENANT! Dust concentration level %i \n",dustConsentrate );
+
+          } 
         }
+        pixel.clear(); 
+        pixel.show(); 
         starttime = millis();
     }
   }
-
 
 void round_table(){
   // step one revolution  in one direction:
