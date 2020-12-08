@@ -114,6 +114,7 @@ void setup() {
   // delay(2000);
   pinMode(A5,INPUT);      //Air quality sensor
   pinMode(A0,INPUT);      //Dust sensor
+  pinMode(A1,INPUT);      //line_sensor
   pinMode(A2,OUTPUT);     //hopper servo motor
 
   myServo.attach(A2);     //attach the Servo object to a pin
@@ -144,8 +145,8 @@ void loop() {
   //Wheatstone_Br();
   //door_hopper();   
   //Moisture();
-  Conveyor();
-  //Distance_sensor();
+  //Conveyor();
+  line_sensor();
 
   if ((millis()-last)>120000) {           //connect - disconnect from dashboard
       Serial.printf("Pinging MQTT \n");
@@ -320,5 +321,14 @@ void Conveyor(){
   delay(1000);
 }
 
-// void Distance_sensor(){}
+void line_sensor(){
+  if(analogRead(A1)<1000) {
+    Serial.printf("White = %i \n",analogRead(A1));
+    delay(500);
+  }
+  else {
+    Serial.printf("Black = %i \n",analogRead(A1));
+    delay(500);
+  }
+}
   

@@ -1,10 +1,10 @@
-# Servo_motor
+# experiment_folder
 
-A Particle project named Servo_motor
+A Particle project named experiment_folder
 
 ## Welcome to your project!
 
-Every new Particle project is composed of 3 important elements that you'll see have been created in your project directory for Servo_motor.
+Every new Particle project is composed of 3 important elements that you'll see have been created in your project directory for experiment_folder.
 
 #### ```/src``` folder:  
 This is the source folder that contains the firmware files for your project. It should *not* be renamed. 
