@@ -21,8 +21,8 @@
 #include "Air_Quality_Sensor.h"
 #include "HX711.h"
 
-SYSTEM_MODE(SEMI_AUTOMATIC);     //SEMI_AUTOMATIC to skip wifi internet connection
-//SYSTEM_MODE(AUTOMATIC);     //SEMI_AUTOMATIC to skip wifi internet connection
+//SYSTEM_MODE(SEMI_AUTOMATIC);     //SEMI_AUTOMATIC to skip wifi internet connection
+SYSTEM_MODE(AUTOMATIC);     //SEMI_AUTOMATIC to skip wifi internet connection
 
 
 //neopixel--------neopixel---------neopixel
@@ -173,56 +173,56 @@ void setup() {
 
 
 void loop() {
-  //MQTT_connect();
+  MQTT_connect();
   //OLED_display();
-  //BME280();
-  //Dust_Sensor();
-  //Air_Quality_Sensor();
+  BME280();
+  Dust_Sensor();
+  Air_Quality_Sensor();
   Wheatstone_Br();
   door_hopper();   
   //Moisture();
   //round_table();
   //line_sensor();
 
-  // if ((millis()-last)>120000) {           //connect - disconnect from dashboard
-  //     Serial.printf("Pinging MQTT \n");
-  //     if(! mqtt.ping()) {
-  //       Serial.printf("Disconnecting \n");
-  //       mqtt.disconnect();
-  //     }
-  //     last = millis();
-  // }
+  if ((millis()-last)>120000) {           //connect - disconnect from dashboard
+      Serial.printf("Pinging MQTT \n");
+      if(! mqtt.ping()) {
+        Serial.printf("Disconnecting \n");
+        mqtt.disconnect();
+      }
+      last = millis();
+  }
 
-// //     // this is our 'wait for incoming subscription packets' busy subloop
-// //   // try to spend your time here
-//   // Adafruit_MQTT_Subscribe *subscription;
-//   // while ((subscription = mqtt.readSubscription(10000))) {       //Read dashboard & store into a var, wait 10 seconds
-//   //   if (subscription == &Receive_From_Cloud) {                  // if the var and subscription from dashboard
-//   //     value = atoi((char *)Receive_From_Cloud.lastread);        //read interger from dashboard & store in value i==int f==float
-//   //                                                               //WHAT IS <.lastread>?
-//   //     Serial.printf("value received from cloud %i \n", value);  //display block data from dashboard    
-//   //   }
-//   //   if(subscription==&email_From_Cloud){
-//   //   Serial.printf("You Got Mail \n");
-//   //   digitalWrite(D7,HIGH);
-//   //   delay(10000);
-//   //   digitalWrite(D7,LOW);
-//   //   }
-  //   if(millis()-lastTime>publish_time_ms) {    //publish to broker                 
-  //   if(mqtt.Update()) {             //if mqtt ready to receive data then use publish   
-  //   Serial.println("publishing to cloud");
-  //     BME280();
-  //     Air_Quality_Sensor();
-  //     Dust_Sensor();
-  //     temp_to_Cloud.publish(tempC); 
-  //     pressure_to_Cloud.publish(pressPA);
-  //     humidity_to_Cloud.publish(humidRH);
-  //     AQ_to_Cloud.publish(airQuality);
-  //     Dust_to_Cloud.publish(dustConsentrate);
-  //     //moisture_to_Cloud.publish(moisture); 
-  //   } 
-  //   lastTime = millis();
-  // }
+//     // this is our 'wait for incoming subscription packets' busy subloop
+//   // try to spend your time here
+  // Adafruit_MQTT_Subscribe *subscription;
+  // while ((subscription = mqtt.readSubscription(10000))) {       //Read dashboard & store into a var, wait 10 seconds
+  //   if (subscription == &Receive_From_Cloud) {                  // if the var and subscription from dashboard
+  //     value = atoi((char *)Receive_From_Cloud.lastread);        //read interger from dashboard & store in value i==int f==float
+  //                                                               //WHAT IS <.lastread>?
+  //     Serial.printf("value received from cloud %i \n", value);  //display block data from dashboard    
+  //   }
+  //   if(subscription==&email_From_Cloud){
+  //   Serial.printf("You Got Mail \n");
+  //   digitalWrite(D7,HIGH);
+  //   delay(10000);
+  //   digitalWrite(D7,LOW);
+  //   }
+    if(millis()-lastTime>publish_time_ms) {    //publish to broker                 
+    if(mqtt.Update()) {             //if mqtt ready to receive data then use publish   
+    Serial.println("publishing to cloud");
+      BME280();
+      Air_Quality_Sensor();
+      Dust_Sensor();
+      temp_to_Cloud.publish(tempC); 
+      pressure_to_Cloud.publish(pressPA);
+      humidity_to_Cloud.publish(humidRH);
+      AQ_to_Cloud.publish(airQuality);
+      Dust_to_Cloud.publish(dustConsentrate);
+      //moisture_to_Cloud.publish(moisture); 
+    } 
+    lastTime = millis();
+  }
 
 }//THIS IS THE END OF void loop()
   
@@ -293,7 +293,7 @@ void door_hopper() {
       //delay(500);
       pixel.clear();
   }
-    Serial.printf("angle hopper door open %i \n",myServo.read());
+    //Serial.printf("angle hopper door open %i \n",myServo.read());
   }
   else {
     if(myServo.read()==180){    //weight is proper and hopper door is still open
@@ -306,7 +306,7 @@ void door_hopper() {
         delay(75);
         pixel.clear();
       }
-      Serial.printf("angle hopper door closed %i \n",myServo.read());
+      //Serial.printf("angle hopper door closed %i \n",myServo.read());
       round_table();            //rotate round table to next position
     }
   }
@@ -395,7 +395,6 @@ void Dust_Sensor(){
 
             flash++;
             Serial.printf("WARNING: EXPLOSION IMMENANT! Dust concentration level %i \n",dustConsentrate );
-
           } 
         }
         pixel.clear(); 
